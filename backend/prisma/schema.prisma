@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profissional {
+  id             String   @id @default(uuid())
+  nome           String
+  email          String   @unique
+  senha_hash     String
+  crefito        String
+  cidade         String
+  uf             String   @db.Char(2)
+  assinatura_url String?
+
+  horario_inicio String  @default("07:00")
+  horario_fim    String  @default("18:00")
+
+  preco_sessao_individual Decimal @default(0) @db.Decimal(10, 2)
+  preco_pacote_5          Decimal @default(0) @db.Decimal(10, 2)
+  preco_pacote_10         Decimal @default(0) @db.Decimal(10, 2)
+
+  criado_em DateTime @default(now())
+
+  pacientes    Paciente[]
+  agendamentos Agendamento[]
+  pacotes      Pacote[]
+  laudos       Laudo[]
+}
+
+model Paciente {
+  id              String       @id @default(uuid())
+  profissional_id String
+  profissional    Profissional @relation(fields: [profissional_id], references: [id])
+
+  nome            String
+  cpf             String
+  data_nascimento DateTime
+  endereco        String
+  estado_civil    String
+  nacionalidade   String
+  telefone        String?
+  email           String?
+  observacoes     String?
+  ativo           Boolean  @default(true)
+  criado_em       DateTime @default(now())
+
+  preco_sessao_individual Decimal? @db.Decimal(10, 2)
+  preco_pacote_5          Decimal? @db.Decimal(10, 2)
+  preco_pacote_10         Decimal? @db.Decimal(10, 2)
+
+  agendamentos Agendamento[]
+  prontuario   Prontuario?
+  pacotes      Pacote[]
+  laudos       Laudo[]
+
+  @@unique([cpf, profissional_id])
+}
+
+model Agendamento {
+  id              String       @id @default(uuid())
+  paciente_id     String
+  paciente        Paciente     @relation(fields: [paciente_id], references: [id])
+  profissional_id String
+  profissional    Profissional @relation(fields: [profissional_id], references: [id])
+
+  data    DateTime @db.Date
+  horario String
+  slot    Int
+
+  status StatusAgendamento @default(AGENDADO)
+  tipo   TipoSessao        @default(SESSAO)
+
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+
+  sessao_pacote SessaoPacote?
+
+  @@unique([profissional_id, data, horario, slot])
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  COMPARECEU
+  FALTOU
+  DESMARCOU
+}
+
+enum TipoSessao {
+  AVALIACAO
+  SESSAO
+  REPOSICAO
+}
+
+model Prontuario {
+  id          String   @id @default(uuid())
+  paciente_id String   @unique
+  paciente    Paciente @relation(fields: [paciente_id], references: [id])
+
+  medico_solicitante String?
+  diagnostico_medico String?
+  hda                String?
+  hpp_has            Boolean @default(false)
+  hpp_dm             Boolean @default(false)
+  hpp_ca             Boolean @default(false)
+  hpp_cardiopatia    Boolean @default(false)
+  medicacoes         String?
+  habitos_vida       String?
+  exames_medicos     String?
+  avaliacao_fisica   String?
+  diagnostico_fisio  String?
+  pa                 String?
+  fr                 String?
+  fc                 String?
+  ap                 String?
+
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+
+  evolucoes Evolucao[]
+}
+
+model Evolucao {
+  id            String     @id @default(uuid())
+  prontuario_id String
+  prontuario    Prontuario @relation(fields: [prontuario_id], references: [id])
+
+  texto      String
+  criado_em  DateTime @default(now())
+
+  correcao_texto String?
+  correcao_em    DateTime?
+}
+
+model Pacote {
+  id              String       @id @default(uuid())
+  paciente_id     String
+  paciente        Paciente     @relation(fields: [paciente_id], references: [id])
+  profissional_id String
+  profissional    Profissional @relation(fields: [profissional_id], references: [id])
+
+  tipo             TipoPacote
+  valor_cobrado    Decimal         @db.Decimal(10, 2)
+  status_pagamento StatusPagamento @default(AGUARDANDO)
+  pago_em          DateTime?
+  criado_em        DateTime        @default(now())
+
+  sessoes SessaoPacote[]
+}
+
+enum TipoPacote {
+  INDIVIDUAL
+  PACOTE_5
+  PACOTE_10
+}
+
+enum StatusPagamento {
+  AGUARDANDO
+  PAGO
+}
+
+model SessaoPacote {
+  id             String      @id @default(uuid())
+  pacote_id      String
+  pacote         Pacote      @relation(fields: [pacote_id], references: [id])
+  agendamento_id String      @unique
+  agendamento    Agendamento @relation(fields: [agendamento_id], references: [id])
+}
+
+model Laudo {
+  id              String       @id @default(uuid())
+  paciente_id     String
+  paciente        Paciente     @relation(fields: [paciente_id], references: [id])
+  profissional_id String
+  profissional    Profissional @relation(fields: [profissional_id], references: [id])
+
+  conteudo        Json
+  tipo_assinatura TipoAssinatura @default(MANUSCRITA)
+  pdf_url         String?
+  criado_em       DateTime       @default(now())
+}
+
+enum TipoAssinatura {
+  DIGITAL
+  MANUSCRITA
+}
