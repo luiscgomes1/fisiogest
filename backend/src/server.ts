@@ -10,6 +10,9 @@ import prontuarioRoutes from './routes/prontuario.routes'
 import evolucaoRoutes from './routes/evolucao.routes'
 import pacoteRoutes from './routes/pacote.routes'
 import pacoteItemRoutes from './routes/pacoteItem.routes'
+import laudoRoutes from './routes/laudo.routes'
+import laudoItemRoutes from './routes/laudoItem.routes'
+import financeiroRoutes from './routes/financeiro.routes'
 
 const app = express()
 
@@ -28,6 +31,9 @@ app.use('/pacientes/:id', prontuarioRoutes)
 app.use('/evolucoes', evolucaoRoutes)
 app.use('/pacientes/:id', pacoteRoutes)
 app.use('/pacotes', pacoteItemRoutes)
+app.use('/pacientes/:id', laudoRoutes)
+app.use('/laudos', laudoItemRoutes)
+app.use('/financeiro', financeiroRoutes)
 
 const PORT = process.env.PORT || 3333
 
